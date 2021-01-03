@@ -18,14 +18,15 @@ class TracksService:
                 rawInfo = response['track']
 
                 trackInfo = {
-                    'track_listeners': rawInfo['listeners'],
-                    'track_playcount': rawInfo['playcount'],
+                    'duration': rawInfo['duration'],
+                    'listeners': rawInfo['listeners'],
+                    'playcount': rawInfo['playcount'],
                 }
 
                 if len(rawInfo['toptags']['tag']) > 0:
-                    trackInfo['track_tags'] = []
+                    trackInfo['tags'] = []
                     for tag in rawInfo['toptags']['tag']:
-                        trackInfo['track_tags'].append(tag['name'])
+                        trackInfo['tags'].append(tag['name'])
             return trackInfo
         except Exception:
             return None

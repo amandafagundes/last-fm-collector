@@ -37,31 +37,27 @@ def populate(event, context):
     discoveredUsers = 0
 
     # try:
-    users = usersService.getBrazilianUsers()
     # for each friend, get the user info and last listened songs
-    
+
     while discoveredUsers < 5:
+        users = usersService.getBrazilianUsers()
 
         for user in users:
             userId = user['user_id']
             print(f'Getting {userId} data...')
             userData = usersService.getInfo(userId)
             print(f'Getting {userId} tracks...')
-            tracks = usersService.getLastTracks(userId)
-            if(userData != None and tracks != None):
+            reproductions = usersService.getUserReproductions(userId)
+            if(userData != None and reproductions != None):
                 print(f'Getting track tags...')
-                for track in tracks:
-                    userData.update(track)
-
-                    trackData = tracksService.getInfo(
-                        track['track_artist_name'], track['track_name'])
-
-                    if trackData != None:
-                        userData.update(trackData)
-                        friends.append(userData)
-                        userData['created_at'] = datetime.today().strftime('%Y-%m-%d %H:%M:%S.%f')
-
-                        usersService.save(userData)
+                for reproduction in reproductions:
+                        data = {
+                            'user_id': userData['user_id'],
+                            'reproduction': reproduction['reproduction'],
+                            'tracks': reproduction['tracks'],
+                            'created_at': datetime.today().strftime('%Y-%m-%d %H:%M:%S.%f')
+                        }
+                        usersService.save(data)
                 discoveredUsers += 1
     # except:
     #     print('**Error**')

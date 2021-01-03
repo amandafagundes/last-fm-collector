@@ -1,10 +1,12 @@
 from http_client import client
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
+from services import tracks_service
 import math
 from db import database
 
 database = database.Database()
+tracksService = tracks_service.TracksService()
 
 
 class UsersService:
@@ -80,83 +82,109 @@ class UsersService:
 
         return brazilianUsers
 
+    def getUserTotalTracks(self, userId):
+        print('Getting user last song info...')
+
+        lastSongInfo = self.httpClient.get(
+            'user.getrecenttracks',
+            {'user': userId, 'page': 1, 'limit': 1, 'from': 1577836799, 'to': 1609459199})
+
+        if('error' in lastSongInfo):
+            print('*Last.fm API Error: ', lastSongInfo['error'])
+            return 0
+
+        totalTracks = int(lastSongInfo['recenttracks']['@attr']['total'])
+
+        # if the user has listened less than 2000 tracks
+        if totalTracks < 2000:
+            print('~> USELESS: User didin\'t hear enough songs!')
+            return 0
+
+        if totalTracks > 10000:
+            print('~> USELESS: Too many songs!')
+            return 0
+
+        print('Getting user first song info...')
+        firstSongInfo = self.httpClient.get(
+            'user.getrecenttracks',
+            {'user': userId, 'page': totalTracks, 'limit': 1, 'from': 1577836799, 'to': 1609459199})
+
+        firstSongDate = datetime.fromtimestamp(
+            int(firstSongInfo['recenttracks']['track'][0]['date']['uts']))
+        lastSongDate = datetime.fromtimestamp(
+            int(lastSongInfo['recenttracks']['track'][0]['date']['uts']))
+
+        if(lastSongDate.month - firstSongDate.month < 10):
+            print('~> USELESS: Less than 10 months of music!')
+            return 0
+
+        return totalTracks
+
     # collect the tracks of users that listened at least 2000 songs
-    def getLastTracks(self, userId):
+    def getUserReproductions(self, userId):
+        reproductions = []
         tracks = []
         try:
-            tracksLimit = 2000
 
-            # print('Getting user last song info...')
-            lastSongInfo = self.httpClient.get(
-                'user.getrecenttracks',
-                {'user': userId, 'page': 1, 'limit': 1})
+            totalTracks = self.getUserTotalTracks(userId)
 
-            if('error' in lastSongInfo):
-                print('*Last.fm API Error: ', lastSongInfo['error'])
-                return None
+            pages = math.ceil(totalTracks/1000)
 
-            totalTracks = int(lastSongInfo['recenttracks']['@attr']['total'])
-
-            # if the user has listened less than 2000 tracks
-            if totalTracks < 2000:
-                print('~> USELESS: User didin\'t hear enough songs!')
-                return None
-
-            while tracksLimit < 12000 and tracksLimit <= totalTracks:
-                # print(f'Getting {tracksLimit} listened track info...')
-                firstSongInfo = self.httpClient.get(
-                    'user.getrecenttracks',
-                    {'user': userId, 'page': tracksLimit, 'limit': 1})
-
-                firstSongDate = datetime.fromtimestamp(
-                    int(firstSongInfo['recenttracks']['track'][0]['date']['uts']))
-                lastSongDate = datetime.fromtimestamp(
-                    int(lastSongInfo['recenttracks']['track'][0]['date']['uts']))
-
-                if relativedelta(lastSongDate, firstSongDate).years >= 1:
-                    break
-
-                tracksLimit += 2000
-
-            if relativedelta(lastSongDate, firstSongDate).years > 0:
-                tracksPerDay = tracksLimit / \
-                    (relativedelta(lastSongDate, firstSongDate).years*365)
-            else:
-                print('~> USELESS: Less than one year!')
-                return None
-
-            if(tracksLimit >= 12000 or relativedelta(lastSongDate, firstSongDate).years < 1 or tracksPerDay < 5):
-                print('~> USELESS: The user heard over 10000 tracks in a year or didn\'t hear tracks enough!')
-                return None
-
-            pages = math.ceil(tracksLimit/1000)
-
-            # print(f'Iterating over {pages} pages...')
+            previousTrack = {}
+            print(f'Iterating over {pages} pages...')
             for page in range(pages):
 
                 print(f'Getting tracks from page {page}...')
                 songInfo = self.httpClient.get(
                     'user.getrecenttracks',
                     {'user': userId, 'page': page + 1, 'limit': 1000})
+
                 for track in songInfo['recenttracks']['track']:
                     # print('Converting track...')
                     newTrack = {
-                        'track_artist_id': track['artist']['mbid'],
-                        'track_artist_name': track['artist']['#text'],
-                        'track_album_id': track['album']['mbid'],
-                        'track_album_name': track['album']['#text'],
-                        'track_playback_date': datetime.fromtimestamp(int(track['date']['uts'])).strftime('%Y-%m-%d %H:%M:%S.%f'),
-                        'track_name': track['name'],
-                        'track_id': track['mbid'],
+                        'total_tracks': totalTracks,
+                        'artist_id': track['artist']['mbid'],
+                        'artist_name': track['artist']['#text'],
+                        'album_id': track['album']['mbid'],
+                        'album_name': track['album']['#text'],
+                        'playback_date': datetime.fromtimestamp(int(track['date']['uts'])).strftime('%Y-%m-%d %H:%M:%S.%f'),
+                        'name': track['name'],
+                        'id': track['mbid'],
                     }
+
+                    trackData = tracksService.getInfo(
+                        newTrack['artist_name'], track['name'])
+
+                    newTrack.update(trackData)
+
+                    if not previousTrack:
+                        newTrack['reproduction'] = 0
+                    else:
+                        previousTrackDate = datetime.fromisoformat(
+                            previousTrack['playback_date'])
+                        trackDate = datetime.fromisoformat(
+                            newTrack['playback_date'])
+
+                        if abs(relativedelta(previousTrackDate, trackDate).hours) >= 1:
+                            newTrack['reproduction'] = previousTrack['reproduction'] + 1
+                        else:
+                            newTrack['reproduction'] = previousTrack['reproduction']
+
+                        if(previousTrack['reproduction'] != newTrack['reproduction']):
+                            reproductions.append({
+                                'reproduction': newTrack['reproduction']-1,
+                                'tracks': tracks})
+                            tracks = []
+
                     tracks.append(newTrack)
+                    previousTrack = newTrack
         except KeyError as e:
             print('*KeyError: ', e)
 
         except Exception as e:
             print('*Exception: ', e)
 
-        return tracks
+        return reproductions
 
     def save(self, user):
         database.save(user)

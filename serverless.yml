@@ -82,14 +82,14 @@ resources:
       AttributeDefinitions:
         - AttributeName: user_id
           AttributeType: S
-        - AttributeName: track_playback_date
-          AttributeType: S
+        - AttributeName: reproduction
+          AttributeType: N
         - AttributeName: created_at
           AttributeType: S
       KeySchema:
         - AttributeName: user_id
           KeyType: HASH
-        - AttributeName: track_playback_date
+        - AttributeName: reproduction
           KeyType: RANGE
       LocalSecondaryIndexes:
         - IndexName: creation_date
@@ -100,7 +100,7 @@ resources:
             KeyType: RANGE
           Projection:
             NonKeyAttributes:
-            - track_playback_date
+            - reproduction
             ProjectionType: INCLUDE
       ProvisionedThroughput:
         ReadCapacityUnits: 1

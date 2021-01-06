@@ -8,6 +8,9 @@ from boto3.dynamodb.conditions import Key
 usersService = users_service.UsersService()
 tracksService = tracks_service.TracksService()
 
+def users(event, context):
+    usersService.getUsers(1)
+
 def reproductions(event,context):
     userId = event['pathParameters']['userId']
     lastRep = 0
@@ -43,16 +46,10 @@ def populate(event, context):
             userData = usersService.getInfo(userId)
             print(f'Getting {userId} tracks...')
             reproductions = usersService.getUserReproductions(userId)
-            if(userData != None and reproductions != None):
-                print(f'Getting track tags...')
-                for reproduction in reproductions:
-                        data = {
-                            'user_id': userData['user_id'],
-                            'reproduction': reproduction['reproduction'],
-                            'tracks': reproduction['tracks'],
-                            'created_at': datetime.today().strftime('%Y-%m-%d %H:%M:%S.%f')
-                        }
-                        usersService.save(data)
+            if(userData != None and reproductions != None and len(reproductions) > 0):
+                userData['reproductions'] = reproductions
+                userData['created_at'] = datetime.today().strftime('%Y-%m-%d %H:%M:%S.%f')
+                usersService.save(userData)
                 discoveredUsers += 1
     # except:
     #     print('**Error**')

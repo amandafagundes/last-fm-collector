@@ -49,6 +49,14 @@ package:
     - README.md
 
 functions:
+
+  getUsers:
+    handler: users/handler.users
+    events:
+      - http: 
+          path: users/
+          method: GET
+
   getReproductions:
     handler: users/handler.reproductions
     events:
@@ -75,26 +83,9 @@ resources:
       AttributeDefinitions:
         - AttributeName: user_id
           AttributeType: S
-        - AttributeName: reproduction
-          AttributeType: N
-        - AttributeName: created_at
-          AttributeType: S
       KeySchema:
         - AttributeName: user_id
           KeyType: HASH
-        - AttributeName: reproduction
-          KeyType: RANGE
-      LocalSecondaryIndexes:
-        - IndexName: creation_date
-          KeySchema:
-          - AttributeName: user_id
-            KeyType: HASH
-          - AttributeName: created_at
-            KeyType: RANGE
-          Projection:
-            NonKeyAttributes:
-            - reproduction
-            ProjectionType: INCLUDE
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1

@@ -8,29 +8,24 @@ from boto3.dynamodb.conditions import Key
 usersService = users_service.UsersService()
 tracksService = tracks_service.TracksService()
 
-
-def friends(event, context):
-    friends = []
-
+def reproductions(event,context):
     userId = event['pathParameters']['userId']
+    lastRep = 0
+    
+    if bool(event['queryStringParameters']) and 'last' in event['queryStringParameters']:
+        lastRep = int(event['queryStringParameters']['last'])
 
-    friendsIds = usersService.getFriendsIds(userId)
+    reproductions = usersService.getReproductions(userId,lastRep)
+    
+    print('*****')
 
-    for idMap in friendsIds:
-        friendData = usersService.getInfo(idMap['name'])
-        if friendData != None:
-            friends.append(friendData)
-
-    response = {
+    return {
         "statusCode": 200,
         "body": json.dumps({
-            'count': len(friends),
-            'friends': friends
+            'count': len(reproductions),
+            'reproductions': reproductions
         })
     }
-
-    return response
-
 
 def populate(event, context):
     friends = []

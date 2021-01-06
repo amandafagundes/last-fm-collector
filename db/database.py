@@ -5,7 +5,6 @@ dynamodb_client = boto3.client('dynamodb', region_name="us-east-1")
 dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
 table = dynamodb.Table(os.environ['DYNAMODB_TABLE'])
 
-
 class Database:
 
     def getUsersId(self):

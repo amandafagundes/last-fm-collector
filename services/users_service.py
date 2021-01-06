@@ -4,7 +4,7 @@ from datetime import datetime
 from services import tracks_service
 import math
 from db import database
-
+from models.reproduction import Reproduction
 database = database.Database()
 tracksService = tracks_service.TracksService()
 
@@ -12,6 +12,18 @@ tracksService = tracks_service.TracksService()
 class UsersService:
 
     httpClient = client.HttpClient()
+
+    def getReproductions(self, userId, lastRep = 0):
+        reproductions = []
+        try:
+            print(f'Getting reproductions starting from {lastRep}')
+            result = Reproduction.query(userId, Reproduction.reproduction > lastRep, limit=100)
+            for rep in result:
+                print('.')
+                reproductions.append(rep.to_dict()) 
+        except Reproduction.DoesNotExist:
+            print('****DoesNotExist****')
+        return reproductions
 
     def getFriendsIds(self, userId):
         try:

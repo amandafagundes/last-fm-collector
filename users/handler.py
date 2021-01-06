@@ -45,11 +45,17 @@ def populate(event, context):
             print(f'Getting {userId} data...')
             userData = usersService.getInfo(userId)
             print(f'Getting {userId} tracks...')
-            reproductions = usersService.getUserReproductions(userId)
-            if(userData != None and reproductions != None and len(reproductions) > 0):
-                userData['reproductions'] = reproductions
-                userData['created_at'] = datetime.today().strftime('%Y-%m-%d %H:%M:%S.%f')
-                usersService.save(userData)
+            days = usersService.getYearReproductions(userId)
+            if(userData != None and days != None):
+                print(f'Getting track tags...')
+                for day in days:
+                        data = {
+                            'user_id': userData['user_id'],
+                            'date': day['day'],
+                            'reproductions': day['reproductions'],
+                            'created_at': datetime.today().strftime('%Y-%m-%d %H:%M:%S.%f')
+                        }
+                        usersService.save(data)
                 discoveredUsers += 1
     # except:
     #     print('**Error**')

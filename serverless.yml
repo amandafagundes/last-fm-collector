@@ -49,14 +49,6 @@ package:
     - README.md
 
 functions:
-
-  getUsers:
-    handler: users/handler.users
-    events:
-      - http: 
-          path: users/
-          method: GET
-
   getReproductions:
     handler: users/handler.reproductions
     events:
@@ -83,9 +75,13 @@ resources:
       AttributeDefinitions:
         - AttributeName: user_id
           AttributeType: S
+        - AttributeName: date
+          AttributeType: S
       KeySchema:
         - AttributeName: user_id
           KeyType: HASH
+        - AttributeName: date
+          KeyType: RANGE
       ProvisionedThroughput:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1

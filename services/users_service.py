@@ -5,8 +5,11 @@ from services import tracks_service
 import math
 from db import database
 from models.reproduction import Reproduction
+import traceback
+
 database = database.Database()
 tracksService = tracks_service.TracksService()
+
 
 class UsersService:
 
@@ -14,12 +17,12 @@ class UsersService:
 
     def getUsers(self, page):
         users = []
-        
+
         print(f'Getting users from {page}...')
         result = Reproduction.scan()
         for rep in result:
             print(rep.to_dict())
-        
+
     def getReproductions(self, userId, lastRep=0):
         reproductions = []
 
@@ -28,7 +31,7 @@ class UsersService:
             userId, Reproduction.reproduction > lastRep, limit=100)
         for rep in result:
             reproductions.append(rep.to_dict())
-            
+
         return reproductions
 
     def getFriendsIds(self, userId):
@@ -138,13 +141,14 @@ class UsersService:
 
         return totalTracks
 
-    def getUserReproductions(self, userId):
+    def getYearReproductions(self, userId):
+        days = []
         reproductions = []
         tracks = []
         try:
 
             totalTracks = self.getUserTotalTracks(userId)
-            
+
             if totalTracks == 0:
                 print('User doesn\'t attend the requirements!')
                 return None
@@ -152,16 +156,22 @@ class UsersService:
             pages = math.ceil(totalTracks/1000)
 
             previousTrack = {}
+            previousDay = None
             print(f'Iterating over {pages} pages...')
             for page in range(pages):
 
                 print(f'Getting tracks from page {page}...')
                 songInfo = self.httpClient.get(
                     'user.getrecenttracks',
-                    {'user': userId, 'page': page + 1, 'limit': 1000})
+                    {'user': userId, 'page': page + 1, 'limit': 10})
 
                 for track in songInfo['recenttracks']['track']:
-                    print('Converting track...')
+                    day = datetime.fromtimestamp(
+                        int(track['date']['uts'])).strftime('%Y-%m-%d')
+                    print('track: ', track)
+                    print('day: ', day)
+                    print('previousDay: ', previousDay)
+
                     newTrack = {
                         'total_tracks': totalTracks,
                         'artist_id': track['artist']['mbid'],
@@ -176,36 +186,51 @@ class UsersService:
                     trackData = tracksService.getInfo(
                         newTrack['artist_name'], track['name'])
 
-                    newTrack.update(trackData)
+                    if previousDay != None and day != previousDay:
+                        days.append(
+                            {'day': day, 'reproductions': reproductions})
+                        print('days: ', days)
+                        reproductions = []
 
-                    if not previousTrack:
-                        newTrack['reproduction'] = 0
-                    else:
-                        previousTrackDate = datetime.strptime(
-                                previousTrack['playback_date'],'%Y-%m-%d %H:%M:%S.%f')
-                        trackDate = datetime.strptime(
-                                newTrack['playback_date'],'%Y-%m-%d %H:%M:%S.%f')
+                    if trackData != None:
+                        newTrack.update(trackData)
 
-                        if abs(relativedelta(previousTrackDate, trackDate).hours) >= 1:
-                            newTrack['reproduction'] = previousTrack['reproduction'] + 1
+                        if not previousTrack:
+                            newTrack['reproduction'] = 0
                         else:
-                            newTrack['reproduction'] = previousTrack['reproduction']
+                            previousTrackDate = datetime.strptime(
+                                previousTrack['playback_date'], '%Y-%m-%d %H:%M:%S.%f')
+                            trackDate = datetime.strptime(
+                                newTrack['playback_date'], '%Y-%m-%d %H:%M:%S.%f')
 
-                        if(previousTrack['reproduction'] != newTrack['reproduction']):
-                            reproductions.append({
-                                'reproduction': newTrack['reproduction']-1,
-                                'tracks': tracks})
-                            tracks = []
-                            
-                    tracks.append(newTrack)
-                    previousTrack = newTrack
+                            if abs(relativedelta(previousTrackDate, trackDate).hours) >= 1:
+                                newTrack['reproduction'] = previousTrack['reproduction'] + 1
+                            else:
+                                newTrack['reproduction'] = previousTrack['reproduction']
+
+                            if(previousTrack['reproduction'] != newTrack['reproduction']):
+                                reproductions.append({
+                                    'reproduction': newTrack['reproduction']-1,
+                                    'tracks': tracks})
+                                tracks = []
+
+                        previousDay = day
+                        tracks.append(newTrack)
+                        previousTrack = newTrack
+
+            reproductions.append({
+                'reproduction': newTrack['reproduction']-1,
+                'tracks': tracks})
+            days.append({'day': day, 'reproductions': reproductions})
         except KeyError as e:
             print('*KeyError: ', e)
+            traceback.print_exc()
 
         except Exception as e:
             print('*Exception: ', e)
+            traceback.print_exc()
 
-        return reproductions
+        return days
 
     def save(self, user):
         database.save(user)

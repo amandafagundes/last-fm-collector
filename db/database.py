@@ -9,7 +9,6 @@ class Database:
 
     def getUsersId(self):
         rawData = table.scan(
-            IndexName='creation_date',
             Select='SPECIFIC_ATTRIBUTES',
             AttributesToGet=['user_id', 'created_at'])
 

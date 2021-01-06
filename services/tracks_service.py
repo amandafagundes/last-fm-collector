@@ -2,8 +2,6 @@ from http_client import client
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 import math
-
-
 class TracksService:
 
     httpClient = client.HttpClient()

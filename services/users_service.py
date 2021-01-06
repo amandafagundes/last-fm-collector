@@ -8,21 +8,27 @@ from models.reproduction import Reproduction
 database = database.Database()
 tracksService = tracks_service.TracksService()
 
-
 class UsersService:
 
     httpClient = client.HttpClient()
 
-    def getReproductions(self, userId, lastRep = 0):
+    def getUsers(self, page):
+        users = []
+        
+        print(f'Getting users from {page}...')
+        result = Reproduction.scan()
+        for rep in result:
+            print(rep.to_dict())
+        
+    def getReproductions(self, userId, lastRep=0):
         reproductions = []
-        try:
-            print(f'Getting reproductions starting from {lastRep}')
-            result = Reproduction.query(userId, Reproduction.reproduction > lastRep, limit=100)
-            for rep in result:
-                print('.')
-                reproductions.append(rep.to_dict()) 
-        except Reproduction.DoesNotExist:
-            print('****DoesNotExist****')
+
+        print(f'Getting reproductions starting from {lastRep}')
+        result = Reproduction.query(
+            userId, Reproduction.reproduction > lastRep, limit=100)
+        for rep in result:
+            reproductions.append(rep.to_dict())
+            
         return reproductions
 
     def getFriendsIds(self, userId):
@@ -132,13 +138,16 @@ class UsersService:
 
         return totalTracks
 
-    # collect the tracks of users that listened at least 2000 songs
     def getUserReproductions(self, userId):
         reproductions = []
         tracks = []
         try:
 
             totalTracks = self.getUserTotalTracks(userId)
+            
+            if totalTracks == 0:
+                print('User doesn\'t attend the requirements!')
+                return None
 
             pages = math.ceil(totalTracks/1000)
 
@@ -149,10 +158,10 @@ class UsersService:
                 print(f'Getting tracks from page {page}...')
                 songInfo = self.httpClient.get(
                     'user.getrecenttracks',
-                    {'user': userId, 'page': page + 1, 'limit': 1000})
+                    {'user': userId, 'page': page + 1, 'limit': 10})
 
                 for track in songInfo['recenttracks']['track']:
-                    # print('Converting track...')
+                    print('Converting track...')
                     newTrack = {
                         'total_tracks': totalTracks,
                         'artist_id': track['artist']['mbid'],
@@ -187,7 +196,7 @@ class UsersService:
                                 'reproduction': newTrack['reproduction']-1,
                                 'tracks': tracks})
                             tracks = []
-
+                            
                     tracks.append(newTrack)
                     previousTrack = newTrack
         except KeyError as e:

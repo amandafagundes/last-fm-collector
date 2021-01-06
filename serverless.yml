@@ -49,20 +49,13 @@ package:
     - README.md
 
 functions:
-  # getFriends:
-  #   handler: users/handler.friends
-  #   events:
-  #     - http: 
-  #         path: users/{userId}/friends
-  #         method: GET
-          
-  # getUserInfo:
-  #   handler: users/handler.info
-  #   events:
-  #     - http: 
-  #         path: users/{userId}
-  #         method: GET
-          
+  getReproductions:
+    handler: users/handler.reproductions
+    events:
+      - http: 
+          path: users/{userId}/reproductions
+          method: GET
+
   populateDatabase:
     handler: users/handler.populate
     events:

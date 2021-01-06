@@ -158,7 +158,7 @@ class UsersService:
                 print(f'Getting tracks from page {page}...')
                 songInfo = self.httpClient.get(
                     'user.getrecenttracks',
-                    {'user': userId, 'page': page + 1, 'limit': 10})
+                    {'user': userId, 'page': page + 1, 'limit': 1000})
 
                 for track in songInfo['recenttracks']['track']:
                     print('Converting track...')
@@ -181,10 +181,10 @@ class UsersService:
                     if not previousTrack:
                         newTrack['reproduction'] = 0
                     else:
-                        previousTrackDate = datetime.fromisoformat(
-                            previousTrack['playback_date'])
-                        trackDate = datetime.fromisoformat(
-                            newTrack['playback_date'])
+                        previousTrackDate = datetime.strptime(
+                                previousTrack['playback_date'],'%Y-%m-%d %H:%M:%S.%f')
+                        trackDate = datetime.strptime(
+                                newTrack['playback_date'],'%Y-%m-%d %H:%M:%S.%f')
 
                         if abs(relativedelta(previousTrackDate, trackDate).hours) >= 1:
                             newTrack['reproduction'] = previousTrack['reproduction'] + 1

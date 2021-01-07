@@ -165,12 +165,14 @@ class UsersService:
                     'user.getrecenttracks',
                     {'user': userId, 'page': page + 1, 'limit': 10})
 
+                if page == 0:
+                    previousDay = datetime.fromtimestamp(
+                        int(songInfo['recenttracks']['track'][0]['date']['uts'])).strftime('%Y-%m-%d')
+
                 for track in songInfo['recenttracks']['track']:
-                    day = datetime.fromtimestamp(
+                    print('.')
+                    currentDate = datetime.fromtimestamp(
                         int(track['date']['uts'])).strftime('%Y-%m-%d')
-                    print('track: ', track)
-                    print('day: ', day)
-                    print('previousDay: ', previousDay)
 
                     newTrack = {
                         'total_tracks': totalTracks,
@@ -185,12 +187,6 @@ class UsersService:
 
                     trackData = tracksService.getInfo(
                         newTrack['artist_name'], track['name'])
-
-                    if previousDay != None and day != previousDay:
-                        days.append(
-                            {'day': day, 'reproductions': reproductions})
-                        print('days: ', days)
-                        reproductions = []
 
                     if trackData != None:
                         newTrack.update(trackData)
@@ -213,15 +209,14 @@ class UsersService:
                                     'reproduction': newTrack['reproduction']-1,
                                     'tracks': tracks})
                                 tracks = []
-
-                        previousDay = day
+                                if previousDay != currentDate:
+                                    days.append({'day': previousDay, 'reproductions': reproductions})
+                            
+                        reproductions = []
+                        previousDay = currentDate
                         tracks.append(newTrack)
                         previousTrack = newTrack
 
-            reproductions.append({
-                'reproduction': newTrack['reproduction']-1,
-                'tracks': tracks})
-            days.append({'day': day, 'reproductions': reproductions})
         except KeyError as e:
             print('*KeyError: ', e)
             traceback.print_exc()

@@ -67,7 +67,7 @@ def populate(event, context):
 
     response = {
         "statusCode": 200,
-        "body": json.dumps(friends)
+        "body": json.dumps(days)
     }
 
     return response

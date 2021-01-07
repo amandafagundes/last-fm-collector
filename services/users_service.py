@@ -57,13 +57,13 @@ class UsersService:
             userInfo = response['user']
 
             return {
-                'user_id': userInfo['name'],
-                'user_playlists': userInfo['playlists'],
-                'user_playcount': userInfo['playcount'],
-                'user_gender': userInfo['gender'],
-                'user_country': userInfo['country'],
-                'user_type': userInfo['type'],
-                'user_age': userInfo['age'],
+                'id': userInfo['name'],
+                'playlists': int(userInfo['playlists']),
+                'playcount': int(userInfo['playcount']),
+                'gender': userInfo['gender'],
+                'country': userInfo['country'],
+                'type': userInfo['type'],
+                'age': int(userInfo['age']),
             }
 
         except Exception:
@@ -94,11 +94,11 @@ class UsersService:
 
                     # print('Getting user data...')
                     friendData = self.getInfo(idMap['user_id'])
-                    if(friendData != None and friendData['user_country'] == 'Brazil'):
+                    if(friendData != None and friendData['country'] == 'Brazil'):
                         print('YAY! It\'s brazilian')
                         brazilianUsers.append(friendData)
 
-            lastUserId = brazilianUsers[index]['user_id']
+            lastUserId = brazilianUsers[index]['id']
             index += 1
 
         return brazilianUsers

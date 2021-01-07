@@ -16,9 +16,9 @@ class TracksService:
                 rawInfo = response['track']
 
                 trackInfo = {
-                    'duration': rawInfo['duration'],
-                    'listeners': rawInfo['listeners'],
-                    'playcount': rawInfo['playcount'],
+                    'duration': int(rawInfo['duration']),
+                    'listeners': int(rawInfo['listeners']),
+                    'playcount': int(rawInfo['playcount']),
                 }
 
                 if len(rawInfo['toptags']['tag']) > 0:

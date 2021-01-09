@@ -175,7 +175,6 @@ class UsersService:
                         int(songInfo['recenttracks']['track'][0]['date']['uts'])).strftime('%Y-%m-%d')
 
                 for track in songInfo['recenttracks']['track']:
-                    print('.')
                     currentDate = datetime.fromtimestamp(
                         int(track['date']['uts'])).strftime('%Y-%m-%d')
 

@@ -6,6 +6,7 @@ import math
 from db import database
 from models.reproduction import Reproduction
 import traceback
+import time
 
 database = database.Database()
 tracksService = tracks_service.TracksService()
@@ -17,18 +18,25 @@ class UsersService:
 
     def getUsers(self, page):
         users = []
-
-        print(f'Getting users from {page}...')
-        result = Reproduction.scan()
+        last = None
+        count = 0
+        
+        result = Reproduction.scan(Reproduction.date_count == 0, attributes_to_get=['user'])
+                
         for rep in result:
-            print(rep.to_dict())
+            users.append(rep.to_dict())
+            
+        return users
+
+    def count_iterable(self, i):
+        return sum(1 for e in i)
 
     def getReproductions(self, userId, lastRep=0):
         reproductions = []
 
         print(f'Getting reproductions starting from {lastRep}')
         result = Reproduction.query(
-            userId, Reproduction.reproduction > lastRep, limit=100)
+            userId, Reproduction.date_count >= lastRep,limit=100)
         for rep in result:
             reproductions.append(rep.to_dict())
 
@@ -141,14 +149,11 @@ class UsersService:
 
         return totalTracks
 
-    def getYearReproductions(self, userId):
+    def getYearReproductions(self, userId, totalTracks):
         days = []
         reproductions = []
         tracks = []
         try:
-
-            totalTracks = self.getUserTotalTracks(userId)
-
             if totalTracks == 0:
                 print('User doesn\'t attend the requirements!')
                 return None
@@ -163,7 +168,7 @@ class UsersService:
                 print(f'Getting tracks from page {page}...')
                 songInfo = self.httpClient.get(
                     'user.getrecenttracks',
-                    {'user': userId, 'page': page + 1, 'limit': 10})
+                    {'user': userId, 'page': page + 1, 'limit': 10, 'from': 1577836799, 'to': 1609459199})
 
                 if page == 0:
                     previousDay = datetime.fromtimestamp(
@@ -175,7 +180,6 @@ class UsersService:
                         int(track['date']['uts'])).strftime('%Y-%m-%d')
 
                     newTrack = {
-                        'total_tracks': totalTracks,
                         'artist_id': track['artist']['mbid'],
                         'artist_name': track['artist']['#text'],
                         'album_id': track['album']['mbid'],

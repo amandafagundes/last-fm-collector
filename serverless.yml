@@ -49,6 +49,13 @@ package:
     - README.md
 
 functions:
+  getUsers:
+    handler: users/handler.users
+    events:
+      - http: 
+          path: users
+          method: GET
+
   getReproductions:
     handler: users/handler.reproductions
     events:
@@ -83,8 +90,8 @@ resources:
         - AttributeName: date
           KeyType: RANGE
       ProvisionedThroughput:
-        ReadCapacityUnits: 1
-        WriteCapacityUnits: 1
+        ReadCapacityUnits: 3
+        WriteCapacityUnits: 3
       
 
 plugins:

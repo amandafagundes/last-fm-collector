@@ -112,41 +112,49 @@ class UsersService:
         return brazilianUsers
 
     def getUserTotalTracks(self, userId):
-        print('Getting user last song info...')
+        try:
+            print('Getting user last song info...')
 
-        lastSongInfo = self.httpClient.get(
-            'user.getrecenttracks',
-            {'user': userId, 'page': 1, 'limit': 1, 'from': 1577836799, 'to': 1609459199})
+            lastSongInfo = self.httpClient.get(
+                'user.getrecenttracks',
+                {'user': userId, 'page': 1, 'limit': 1, 'from': 1577836799, 'to': 1609459199})
 
-        if('error' in lastSongInfo):
-            print('*Last.fm API Error: ', lastSongInfo['error'])
-            return 0
+            if('error' in lastSongInfo):
+                print('*Last.fm API Error: ', lastSongInfo['error'])
+                return 0
 
-        totalTracks = int(lastSongInfo['recenttracks']['@attr']['total'])
+            totalTracks = int(lastSongInfo['recenttracks']['@attr']['total'])
 
-        # if the user has listened less than 2000 tracks
-        if totalTracks < 2000:
-            print('~> USELESS: User didin\'t hear enough songs!')
-            return 0
+            # if the user has listened less than 2000 tracks
+            if totalTracks < 2000:
+                print('~> USELESS: User didin\'t hear enough songs!')
+                return 0
 
-        if totalTracks > 10000:
-            print('~> USELESS: Too many songs!')
-            return 0
+            if totalTracks > 10000:
+                print('~> USELESS: Too many songs!')
+                return 0
 
-        print('Getting user first song info...')
-        firstSongInfo = self.httpClient.get(
-            'user.getrecenttracks',
-            {'user': userId, 'page': totalTracks, 'limit': 1, 'from': 1577836799, 'to': 1609459199})
+            print('Getting user first song info...')
+            firstSongInfo = self.httpClient.get(
+                'user.getrecenttracks',
+                {'user': userId, 'page': totalTracks, 'limit': 1, 'from': 1577836799, 'to': 1609459199})
 
-        firstSongDate = datetime.fromtimestamp(
-            int(firstSongInfo['recenttracks']['track'][0]['date']['uts']))
-        lastSongDate = datetime.fromtimestamp(
-            int(lastSongInfo['recenttracks']['track'][0]['date']['uts']))
+            firstSongDate = datetime.fromtimestamp(
+                int(firstSongInfo['recenttracks']['track'][0]['date']['uts']))
+            lastSongDate = datetime.fromtimestamp(
+                int(lastSongInfo['recenttracks']['track'][0]['date']['uts']))
 
-        if(lastSongDate.month - firstSongDate.month < 10):
-            print('~> USELESS: Less than 10 months of music!')
-            return 0
+            if(lastSongDate.month - firstSongDate.month < 10):
+                print('~> USELESS: Less than 10 months of music!')
+                return 0
+            
+        except KeyError as e:
+            print('*KeyError: ', e)
+            traceback.print_exc()
 
+        except Exception as e:
+            print('*Exception: ', e)
+            traceback.print_exc()
         return totalTracks
 
     def getYearReproductions(self, userId, totalTracks):
@@ -214,11 +222,12 @@ class UsersService:
                                 tracks = []
                                 if previousDay != currentDate:
                                     days.append({'day': previousDay, 'reproductions': reproductions})
-                            
-                        reproductions = []
+                                    reproductions = []
+                                
                         previousDay = currentDate
                         tracks.append(newTrack)
-                        previousTrack = newTrack
+                        previousTrack = newTrack           
+            days.append({'day': previousDay, 'reproductions': reproductions})
 
         except KeyError as e:
             print('*KeyError: ', e)

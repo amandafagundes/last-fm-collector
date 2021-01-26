@@ -84,11 +84,24 @@ resources:
           AttributeType: S
         - AttributeName: date
           AttributeType: S
+        - AttributeName: date_count
+          AttributeType: N
       KeySchema:
         - AttributeName: user_id
           KeyType: HASH
         - AttributeName: date
           KeyType: RANGE
+      LocalSecondaryIndexes:
+        - IndexName: date_index
+          KeySchema:
+          - AttributeName: user_id
+            KeyType: HASH
+          - AttributeName: date_count
+            KeyType: RANGE
+          Projection:
+            NonKeyAttributes:
+            - date
+            ProjectionType: INCLUDE
       ProvisionedThroughput:
         ReadCapacityUnits: 3
         WriteCapacityUnits: 3

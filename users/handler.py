@@ -58,7 +58,7 @@ def reproductions(event, context):
 def populate(event, context):
     discoveredUsers = 0
 
-    while discoveredUsers < 5:
+    while discoveredUsers < 20:
         users = usersService.getBrazilianUsers()
 
         for user in users:

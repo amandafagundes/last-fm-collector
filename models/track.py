@@ -16,3 +16,4 @@ class Track(MapAttribute):
   playcount=UnicodeAttribute()
   reproduction=NumberAttribute()
   total_tracks=NumberAttribute()
+  tags=ListAttribute()

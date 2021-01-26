@@ -4,7 +4,7 @@ from datetime import datetime
 from services import tracks_service
 import math
 from db import database
-from models.reproduction import Reproduction
+from models.item_model import ItemModel
 import traceback
 import time
 
@@ -16,29 +16,35 @@ class UsersService:
 
     httpClient = client.HttpClient()
 
-    def getUsers(self, page):
+    def getUsers(self, last):
         users = []
         last = None
-        count = 0
-        
-        result = Reproduction.scan(Reproduction.date_count == 0, attributes_to_get=['user'])
-                
+
+        result = ItemModel.scan(ItemModel.date_count == 0, attributes_to_get=[
+            'user'], limit=10, last_evaluated_key=last)
+
         for rep in result:
-            users.append(rep.to_dict())
-            
+            userData = rep.to_dict()
+            user = userData['user']
+            users.append(user)
+
         return users
 
     def count_iterable(self, i):
         return sum(1 for e in i)
 
-    def getReproductions(self, userId, lastRep=0):
+    def getReproductions(self, userId, startDate, endDate, lastRep=0):
         reproductions = []
 
         print(f'Getting reproductions starting from {lastRep}')
-        result = Reproduction.query(
-            userId, Reproduction.date_count >= lastRep,limit=100)
+        result = ItemModel.query(
+            userId, ItemModel.date.between(startDate, endDate), attributes_to_get=['date',
+                                                                                   'reproductions'], limit=100)
         for rep in result:
-            reproductions.append(rep.to_dict())
+            repData = rep.to_dict()
+            reproduction = {'date': repData['date'],
+                            'reproductions': repData['reproductions']}
+            reproductions.append(reproduction)
 
         return reproductions
 
@@ -147,7 +153,7 @@ class UsersService:
             if(lastSongDate.month - firstSongDate.month < 10):
                 print('~> USELESS: Less than 10 months of music!')
                 return 0
-            
+
         except KeyError as e:
             print('*KeyError: ', e)
             traceback.print_exc()
@@ -221,12 +227,13 @@ class UsersService:
                                     'tracks': tracks})
                                 tracks = []
                                 if previousDay != currentDate:
-                                    days.append({'day': previousDay, 'reproductions': reproductions})
+                                    days.append(
+                                        {'day': previousDay, 'reproductions': reproductions})
                                     reproductions = []
-                                
+
                         previousDay = currentDate
                         tracks.append(newTrack)
-                        previousTrack = newTrack           
+                        previousTrack = newTrack
             days.append({'day': previousDay, 'reproductions': reproductions})
 
         except KeyError as e:

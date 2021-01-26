@@ -10,8 +10,14 @@ tracksService = tracks_service.TracksService()
 
 
 def users(event, context):
-    users = usersService.getUsers(1)
-    
+
+    last = None
+
+    if event['queryStringParameters'] != None and event['queryStringParameters']['last'] != None:
+        last = event['queryStringParameters']['last']
+
+    users = usersService.getUsers(last)
+
     return {
         "statusCode": 200,
         "body": json.dumps({
@@ -23,12 +29,22 @@ def users(event, context):
 
 def reproductions(event, context):
     userId = event['pathParameters']['userId']
-    lastRep = 0
+
+    lastRep = None
+    startDate = None
+    endDate = None
+
+    if event['queryStringParameters'] != None and 'start_date' in event['queryStringParameters']:
+        startDate = event['queryStringParameters']['start_date']
+
+    if event['queryStringParameters'] != None and 'end_date' in event['queryStringParameters']:
+        endDate = event['queryStringParameters']['end_date']
 
     if bool(event['queryStringParameters']) and 'last' in event['queryStringParameters']:
         lastRep = int(event['queryStringParameters']['last'])
 
-    reproductions = usersService.getReproductions(userId, lastRep)
+    reproductions = usersService.getReproductions(
+        userId, startDate, endDate, lastRep)
 
     return {
         "statusCode": 200,
@@ -52,7 +68,7 @@ def populate(event, context):
             print(f'Getting {userId} total tracks...')
             totalTracks = usersService.getUserTotalTracks(userId)
             print(f'Getting {userId} tracks...')
-            days = usersService.getYearReproductions(userId,totalTracks)
+            days = usersService.getYearReproductions(userId, totalTracks)
             if(userData != None and days != None):
                 userData['total_tracks'] = totalTracks
                 print(f'Getting track tags...')
@@ -70,7 +86,7 @@ def populate(event, context):
                     usersService.save(data)
                     date_count += 1
                 discoveredUsers += 1
-                
+
     response = {
         "statusCode": 200,
         "body": json.dumps(days)

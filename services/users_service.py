@@ -11,7 +11,6 @@ import time
 database = database.Database()
 tracksService = tracks_service.TracksService()
 
-
 class UsersService:
 
     httpClient = client.HttpClient()
@@ -20,7 +19,7 @@ class UsersService:
         users = []
         last = None
 
-        result = ItemModel.scan(ItemModel.date_count == 0, attributes_to_get=[
+        result = ItemModel.scan(ItemModel.date == '2020-01-01', attributes_to_get=[
             'user'], limit=10, last_evaluated_key=last)
 
         for rep in result:
@@ -202,6 +201,7 @@ class UsersService:
                         'id': track['mbid'],
                     }
 
+                    print('!')
                     trackData = tracksService.getInfo(
                         newTrack['artist_name'], track['name'])
 

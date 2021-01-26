@@ -3,7 +3,7 @@ from pynamodb.attributes import (
     UnicodeAttribute, MapAttribute, NumberAttribute, UnicodeSetAttribute, UTCDateTimeAttribute, ListAttribute
 )
 
-class Track(MapAttribute):
+class TrackMap(MapAttribute):
   id=UnicodeAttribute()
   name=UnicodeAttribute()
   album_id=UnicodeAttribute()
@@ -17,3 +17,5 @@ class Track(MapAttribute):
   reproduction=NumberAttribute()
   total_tracks=NumberAttribute()
   tags=ListAttribute()
+  genres=ListAttribute()
+  release_date= UnicodeAttribute()

@@ -181,7 +181,7 @@ class UsersService:
                 print(f'Getting tracks from page {page}...')
                 songInfo = self.httpClient.get(
                     'user.getrecenttracks',
-                    {'user': userId, 'page': page + 1, 'limit': 10, 'from': 1577836799, 'to': 1609459199})
+                    {'user': userId, 'page': page + 1, 'limit': 1000, 'from': 1577836799, 'to': 1609459199})
 
                 if page == 0:
                     previousDay = datetime.fromtimestamp(
